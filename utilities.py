@@ -35,12 +35,18 @@ class functions():
         if 'title' in selection.columns:
             title_position = list(selection.columns).index('title')
             for i in range(selection.shape[0]):
-                selection.iloc[i,title_position] = selection.iloc[i,title_position].split('{')[1].split('}')[0]
+                try:
+                    selection.iloc[i,title_position] = selection.iloc[i,title_position].split('{')[1].split('}')[0]
+                except:
+                    pass
     
         if 'year' in selection.columns:
             year_position = list(selection.columns).index('year')
             for i in range(selection.shape[0]):
-                selection.iloc[i,year_position] = int(selection.iloc[i,year_position])
+                try:
+                    selection.iloc[i,year_position] = int(selection.iloc[i,year_position])
+                except:
+                    pass
         
         selection.to_excel(xlsx_path, index=False)
         
