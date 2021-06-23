@@ -1,5 +1,5 @@
 # SESAM_utilities
-Class containing useful functions that may be adopted in general applications
+Simple set of classes containing useful functions that may be adopted in general applications
 
 # How to use
 Save the code in a folder nested within your "site-packages" folder. If you are using anaconda, the "site-packages" folder should be nested in the following path:
