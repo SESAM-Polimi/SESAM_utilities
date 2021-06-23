@@ -1,5 +1,5 @@
 """
-Author: Lorenzo Rinaldi
+Author: Lorenzo Rinaldi, SESAM
 
 """
 
@@ -16,12 +16,12 @@ class functions():
     Notes for the contributors:
         1) if you add a new function, please make sure you use the same syntax as the functions already implemented
            and make sure to add a documentation
-        2) thanks for the support!!!
+        2) thank you for the support!!!
 
     """
     
     
-    def bibtex_parser(bib_path:str, xlsx_path:str, properties=['year', 'title', 'author', 'journal', 'doi']):
+    def bibtex_parser(bib_path:str, xlsx_path:str, properties=['year', 'title', 'author', 'journal', 'doi'], doi_links=True):
         
         
         """
@@ -31,6 +31,7 @@ class functions():
             bib_path: string containing the path where to import the .bib file
             xlsx_path: string containing the path where to export the .xlsx file
             properties: list containing the properties to be parsed from the imported documents
+            doi_links: bool; if True the doi columns will contain clickable hyperlinks
         
         Returns:
             selection: pandas DataFrame containing the parsed information of about the imported documents contained in the .bib file
@@ -56,6 +57,14 @@ class functions():
             for i in range(selection.shape[0]):
                 try:
                     selection.iloc[i,year_position] = int(selection.iloc[i,year_position])
+                except:
+                    pass
+
+        if 'doi' in selection.columns and doi_links==True:
+            doi_position = list(selection.columns).index('doi')
+            for i in range(selection.shape[0]):
+                try:
+                    selection.iloc[i,doi_position] = 'https://doi.org/1'+selection.iloc[i,doi_position]
                 except:
                     pass
         
