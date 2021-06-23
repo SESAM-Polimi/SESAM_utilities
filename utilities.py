@@ -10,9 +10,6 @@ import bibtexparser
 #%%
 class functions():
     
-    def __init__(self):
-        return
-
     def bibtex_parser(self,bib_path,xlsx_path, properties=['year', 'title', 'author', 'journal', 'doi']):
         
         with open(bib_path, encoding="utf8") as bibtex_file:
