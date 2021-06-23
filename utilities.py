@@ -64,7 +64,7 @@ class functions():
             doi_position = list(selection.columns).index('doi')
             for i in range(selection.shape[0]):
                 try:
-                    selection.iloc[i,doi_position] = 'https://doi.org/1'+selection.iloc[i,doi_position]
+                    selection.iloc[i,doi_position] = 'https://doi.org/'+selection.iloc[i,doi_position]
                 except:
                     pass
         
