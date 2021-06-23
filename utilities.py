@@ -10,6 +10,17 @@ import bibtexparser
 #%%
 class functions():
     
+    """
+    This class contains general functions useful in multiple occasions.
+    
+    Notes for the contributors:
+        1) if you add a new function, please make sure you use the same syntax as the functions already implemented
+           and make sure to add a documentation
+        2) thanks for the support!!!
+
+    """
+    
+    
     def bibtex_parser(bib_path:str, xlsx_path:str, properties=['year', 'title', 'author', 'journal', 'doi']):
         
         
