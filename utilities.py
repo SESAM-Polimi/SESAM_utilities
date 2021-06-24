@@ -12,7 +12,9 @@ import shutil
 import copy
 
 
-_PAPERNAME_METHOD = {'LR': {'items': ['Year','Journal','Author','Title'], 'separator':'_'}}
+_PAPERNAME_METHOD = {'LR': {'items': ['Year','Journal','Author','Title'],
+                            'minimum_requirements': ['Year','Author'],
+                            'separator':'_'}}
 _SPECIAL_CHARACTERS = [(' ','_'), ('<',''), ('>',''), (':','-'), ('"',''), ('/','-'),('\\','-'),('?',''),('*','')]
 
 #%%
@@ -146,7 +148,7 @@ class functions():
 
 
 
-    def rename_articles(metadata:dict, method:str):
+    def rename_articles(metadata:dict, method:str, check=False):
         
         """
         This function renames pdf scientific articles according to pdf metadata
@@ -156,10 +158,14 @@ class functions():
         Args:
             metadata: dictionary whose keys are the paths of the pdf files, the values are the metadata
             method: string representing the renaming criterion, to be defined in the _PAPERNAME_METHOD dictionary in the upper part of this script        
+            check: boolean to check the proceeding of the function step by step and show up when there are mistakes
         """        
                 
         for file in list(metadata.keys()):
-
+            
+            if check==True:
+                print(file)
+                print('\n')
             
             "Replacing special characters from title, if available"
             try:
@@ -186,11 +192,23 @@ class functions():
             "Renaming Elsevier articles"
             if 'Creator' in list(metadata[file].keys()):
                 if metadata[file]['Creator'] == 'Elsevier':
-                    metadata[file]['Year']    = metadata[file]['Subject'].split('(')[1].split(')')[0]
-                    metadata[file]['DOI']     = metadata[file]['Subject'].split(' ')[-1]
-                    metadata[file]['Journal'] = metadata[file]['DOI'].split('.')[2]
-                    metadata[file]['Author']  = metadata[file]['Author'].split(' ')[-1]
-            
+                    
+                    try:
+                        metadata[file]['DOI']     = metadata[file]['Subject'].split(' ')[-1]
+                    except:
+                        pass
+                    
+                    try:
+                        metadata[file]['Journal'] = metadata[file]['DOI'].split('.')[2]
+                    except:
+                        pass
+                    
+                    try:
+                        metadata[file]['Author']  = metadata[file]['Author'].split(' ')[-1]
+                    except:
+                        pass
+                    
+                    
                     new_name = []
                     for item in _PAPERNAME_METHOD[method]['items']:
                         try:
@@ -199,17 +217,22 @@ class functions():
                             pass
                         
                     new_name = _PAPERNAME_METHOD[method]['separator'].join(new_name)+'.pdf'
+        
+                    count_properties = []
+                    for item in _PAPERNAME_METHOD[method]['items']:
+                        if item in new_name:
+                            count_properties += [item]
                     
-                    # new_name = os.path.join(path,new_name)                    
-                    len_max = 255
-                    if len(new_name) >= len_max:
-                        new_name = new_name[:(len_max-len('.pdf'))]
-                        new_name += '.pdf'
-                    
-                    new_name = os.path.join('\\'.join(file.split('\\')[:-1]),new_name)
-                                                                    
-                    os.rename(file, new_name)
-                    
+                    if set(_PAPERNAME_METHOD[method]['minimum_requirements']) <= set(count_properties):
+                        len_max = 255
+                        if len(new_name) >= len_max:
+                            new_name = new_name[:(len_max-len('.pdf'))]
+                            new_name += '.pdf'
+                        
+                        new_name = os.path.join('\\'.join(file.split('\\')[:-1]),new_name)
+                        
+                        os.rename(file, new_name)
+                
                     
                 
                 
