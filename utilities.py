@@ -7,9 +7,13 @@ import pandas as pd
 import bibtexparser
 from pdfminer.pdfparser import PDFParser
 from pdfminer.pdfdocument import PDFDocument
-import os
-# from os.path import isfile, join
+import os, fnmatch
+import shutil
+import copy
 
+
+_PAPERNAME_METHOD = {'LR': {'items': ['Year','Journal','Author','Title'], 'separator':'_'}}
+_SPECIAL_CHARACTERS = [(' ','_'), ('<',''), ('>',''), (':','-'), ('"',''), ('/','-'),('\\','-'),('?',''),('*','')]
 
 #%%
 class functions():
@@ -23,6 +27,7 @@ class functions():
         2) thank you for the support!!!
 
     """
+    
     
     
     def bibtex_parser(bib_path:str, xlsx_path:str, properties=['year', 'title', 'author', 'journal', 'doi'], doi_links=True):
@@ -75,42 +80,141 @@ class functions():
         return selection
         
     
-    def get_files_path_from_directory(path, file_extension:str):
+    
+    def get_files_names(path:str, file_extensions:list):
+
+        """
+        This function generates a list containing names of files contained in a given path
         
-        filenames = os.listdir(path)
+        Args:
+            path: directory to search
+            file_extension: list of the extensions to be selected
         
-       
-        for file in filenames:
-            if file[-len(file_extension)] != file_extension:
-                filenames.remove(file)
-               
+        Returns:
+            filenames: dictionary whose keys are related to the extensions and the values are the strings containing the names of the files with the desired extension
+        """
+        
+        listOfFiles = os.listdir(path)
+        filenames = {}
+        
+        for item in file_extensions:
+            extension = "*.{}".format(item)
+            filenames[item] = []
+            for entry in listOfFiles:
+                if fnmatch.fnmatch(entry, extension):
+                    filenames[item] += [os.path.join(path,entry)]
+                   
         return filenames
 
 
-    def elsevier_pdf_metadata_miner(pdf_path:list):
+    def get_pdf_metadata(file_paths):
 
         """
-        This function generates a dictionary containing metadata information of one or multiple pdf articles downloaded from Elsevier
+        This function generates a dictionary containing pdf metadata
         
         Args:
-            pdf_path: list containing the paths of the files to import
+            file_paths: list or dictionary containing paths of pdf files to be analysed
+            file_extension: list of the extensions to be selected
         
         Returns:
-            info: dictionary containing metadata information of the imported pdf articles
+            filenames: dictionary whose keys are related to the extensions and the values are the strings containing the names of the files with the desired extension
         """
-        
-        fp = open(pdf_path, 'rb')
-        parser = PDFParser(fp)
-        doc = PDFDocument(parser)
-        info = {}
-        for i in doc.info[0].keys():
+
+        if isinstance(file_paths, dict):
+            pdf_files = file_paths['pdf']
+        elif isinstance(file_paths, list):
+            pdf_files = copy.deepcopy(file_paths)
+            
+        pdf_metadata = {}
+        for file in pdf_files:   
             try:
-                info[i] = doc.info[0][i].decode("utf-8")
+                fp = open(file, 'rb')
+                parser = PDFParser(fp)
+                doc = PDFDocument(parser)
+                pdf_metadata[file] = {}
+                
+                for i in doc.info[0].keys():
+                    try:
+                        pdf_metadata[file][i] = doc.info[0][i].decode("utf-8")
+                    except:
+                        pass
+                fp.close()
+            except:
+                print('WARNING: problems with file named "{}"'.format(file))
+        
+        return pdf_metadata
+
+
+
+    def rename_articles(metadata:dict, method:str):
+        
+        """
+        This function renames pdf scientific articles according to pdf metadata
+        
+        SUPPORT FOR ELSEVIER ARTICLES ONLY AT THE MOMENT
+        
+        Args:
+            metadata: dictionary whose keys are the paths of the pdf files, the values are the metadata
+            method: string representing the renaming criterion, to be defined in the _PAPERNAME_METHOD dictionary in the upper part of this script        
+        """        
+                
+        for file in list(metadata.keys()):
+
+            
+            "Replacing special characters from title, if available"
+            try:
+                title = copy.deepcopy(metadata[file]['Title']) 
+                counter = 0
+                for i in title:
+                    if i in [spchar[0] for spchar in _SPECIAL_CHARACTERS]:
+                        
+                        metadata[file]['Title'] = metadata[file]['Title'][:counter]\
+                                                      + [spchar[1] for spchar in _SPECIAL_CHARACTERS][[spchar[0] for spchar in _SPECIAL_CHARACTERS].index(i)]\
+                                                      + metadata[file]['Title'][counter+1:]
+                    counter += 1    
             except:
                 pass
             
-        return info
+            
+            "Extracting year from CreationDate parameter, if available"
+            try:
+                metadata[file]['Year'] = metadata[file]['CreationDate'].split(':')[1][:4]
+            except:
+                pass
+    
 
+            "Renaming Elsevier articles"
+            if 'Creator' in list(metadata[file].keys()):
+                if metadata[file]['Creator'] == 'Elsevier':
+                    metadata[file]['Year']    = metadata[file]['Subject'].split('(')[1].split(')')[0]
+                    metadata[file]['DOI']     = metadata[file]['Subject'].split(' ')[-1]
+                    metadata[file]['Journal'] = metadata[file]['DOI'].split('.')[2]
+                    metadata[file]['Author']  = metadata[file]['Author'].split(' ')[-1]
+            
+                    new_name = []
+                    for item in _PAPERNAME_METHOD[method]['items']:
+                        try:
+                            new_name += [metadata[file][item]]
+                        except:
+                            pass
+                        
+                    new_name = _PAPERNAME_METHOD[method]['separator'].join(new_name)+'.pdf'
+                    
+                    # new_name = os.path.join(path,new_name)                    
+                    len_max = 255
+                    if len(new_name) >= len_max:
+                        new_name = new_name[:(len_max-len('.pdf'))]
+                        new_name += '.pdf'
+                    
+                    new_name = os.path.join('\\'.join(file.split('\\')[:-1]),new_name)
+                                                                    
+                    os.rename(file, new_name)
+                    
+                    
+                
+                
+
+    
         
                 
         
